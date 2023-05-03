@@ -15,7 +15,7 @@ I have also used Arduino Nano and "Blue Pill" STM32F1.  Maybe I will also try ES
 6. Ignition probe for engine RPM.  This is just a wire and some protection diodes connected to one of the microcontroller's timer inputs     
 7. Gyro/accelerometer: MPU9250. This worked OK until I disconnected and disabled it because "g" anyway will be calculated based on Sat.Nav.  
 
-You can of course add your own selection of other sensors.  My plan:
+You can of course add your own selection of other sensors -- see for example the pedal sensor in the Mech folder.  My plan:
 1) $\lambda$ or O<sub>2</sub>: Bosch LSU-ADV and Bylund's LambdaShield with Bosch CJ125 chip.    The code for this is included and enabled -- just hook it up and try!  I prefer to present the results as "Fuel Excess" -- negative FuEx means lean (danger), positive FuEx is rich (safe).  FuEx = 1 / $\lambda$ - 1  
 2) Knock sensor: TPIC8101DWTR chip and 0261231176 sensor   
 
