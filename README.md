@@ -21,8 +21,8 @@ You can of course add your own selection of other sensors -- see for example the
 
 # How to get started with software for STM32: 
 1. Install STM32CubeIDE and STM32CubeMX on a PC  
-2. Open the RaceTemp.ioc file in CubeMX to view (or edit) pinout or other settings.  Then click "GENERATE CODE" and wait a few seconds for the popup "The Code is successfully..." with a blue "Open Project" button  
-3. "Open Project" will open the RaceTemp project in CubeIDE.  Here you edit whatever you need in the source code.  You should at least:  
+2. Open the RaceTemp.ioc file in CubeMX to view (or edit) pinout or other settings.  Then click "GENERATE CODE" and wait a few seconds for the popup "The Code is successfully..." with a blue "Open Project" button. (If that button does not start CubeIDE, then you need to find another way to start CubeIDE and go File-->Open project from file system-->select the RaceTemp folder-->Finish )  
+3. In CubeIDE you edit whatever you need in the source code.  You should at least:  
     a) Change the network SSID and password in Core/Src/RaceTemp.c (unless you are comfortable with "MySSID" and "MyPassword"), and  
     b) Enable "use float with printf...".  Right-click on RaceTemp in the left pane (project tree), select C/C++Build --> Settings --> MCU Settings --> Check the box for "Use float printf..." --> Apply and Close  
 4. When the project compiles OK, then connect your debugger and download to the microcontroller.  
