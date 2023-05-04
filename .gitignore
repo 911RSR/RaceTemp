@@ -1,0 +1,14 @@
+# generated files from CubeMX and not edited to include "user code"
+adc.c
+dma.c
+*rtos.c
+gpio.c
+i2c.c
+main.c
+spi.c
+*msp.c
+*tim.c
+syscalls.c
+sysmem.c
+system*.c
+usart.c
