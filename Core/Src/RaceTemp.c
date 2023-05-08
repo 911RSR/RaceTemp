@@ -6,6 +6,7 @@
  */
 
 #include "RaceTemp.h"
+#include "pass.h"
 #include "main.h"
 #include "cmsis_os.h"
 #include <stdio.h>  //sprintf
@@ -338,7 +339,7 @@ void RaceTemp()
 	 * 		0 broadcast SSID of ESP8266 soft-AP
 	 * 		1 do not broadcast SSID of ESP8266 soft-AP
 	 */
-	send_string( "AT+CWSAP_CUR=\"MySSID\",\"MyPassword\",5,3\r\n" );  // <---- EDIT this! 
+	send_string( CWSAP_CUR );  // <---- EDIT this in pass.h
 	delay(1.0);
 	send_string( "ATE0\r\n" ); // Echo off
 	delay(0.005);
