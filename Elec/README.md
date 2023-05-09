@@ -54,14 +54,13 @@ This worked OK until I disconnected and disabled it because "g" anyway will be c
 The code probably still works -- to enable it: uncomment the //#include "MPU9250.h" in the RaceTemp.c  
 
 # 7. $\lambda$ or O<sub>2</sub> wideband sensor  
-![LS44221 LSU ADV sensor](LSU ADV.jpg)  
+![LS44221 LSU ADV sensor](LS44221.jpg)  
 I will use a Bosch part number LS44221 as shown in the picture and Bylund's LambdaShield with Bosch CJ125 chip.  
 The code for this is included and enabled -- just hook it up and try! 
 It is probably OK to leave it enabled in software even if you do not add the electronics and sensor.  
-I prefer to present the results as "Fuel Excess" -- negative FuEx means lean (danger), positive FuEx is rich (safe).  
-
-Preliminary target value for max power: 5 to 10% fuel excess while at 100% throttle.  
-Slightly more excess fuel at lower thottle.  
+I prefer to present the results as "Fuel Excess" -- negative FuEx means lean (danger), positive FuEx is rich (safe). 
+Preliminary target value for max power: 5 to 10% fuel excess while at 100 % throttle -- also depending on the exhaust gas temperature. 
+Slightly more excess fuel at lower throttle.  
 
 I will try to use this wideband O2-sensor: Bosch part number LS44221 (marked 226A41733R) as shown in the picture.  
 Bosch LS44221 (LSU ADV) has a reasonable price, approx. 100 USD for a new one, and much less for a used.  
