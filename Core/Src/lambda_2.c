@@ -203,7 +203,7 @@ void Lambda_nbp_sprintf( char buf[] )
 
 /* @brief Write fuel excess, battery voltage and LSU temperature to a string (text buffer)
 */
-void Lambda_sprintf_FE_Batt_TLSU( char buf[] )
+void Lambda_sprintf( char buf[] )
 {
 	sprintf(buf,",%.1f,%.1f,%.1f", FuelExcess_smo*100.0f, UBAT, T_LSU);
 }

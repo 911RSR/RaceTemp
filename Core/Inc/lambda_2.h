@@ -12,6 +12,6 @@ uint16_t Lambda_read( float* Lambda, float* F, float* Ip, float* Vcc );
 void Lambda_task();
 void Lambda_IRQHandler();
 void Lambda_nbp_sprintf( char [] );
-void Lambda_sprintf_FE_Batt_TLSU( char [] );
+void Lambda_sprintf( char [] ); // prints FuEx UBat TempLSU
 
 #endif /* CJ125 */

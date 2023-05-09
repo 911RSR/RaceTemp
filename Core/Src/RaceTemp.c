@@ -22,8 +22,8 @@
 struct ubx_handle_t ubx;    // global message struct
 uint32_t count=0;    // Message counter for RaceChrono
 uint16_t NTC_raw;
-float tempNTC=25.0;  // [degC] initial value = starting temperature for filter
-float tempTC=25.0;   // [degC] initial value = starting temperature for filter
+float tempNTC=25.0;  // [degC] initial value = starting temperature for low pass filter
+float tempTC=25.0;   // [degC] initial value = starting temperature for low pass filter
 uint32_t rc3_time;
 uint32_t TC_time;
 uint32_t ign_diff=36000;  // initialize to >1 to avoid division by zero
@@ -201,7 +201,8 @@ void rc3_sprintf( char buf[] )
 
     // Analogue input -------------------------------------------------------------------------------
 	//#ifdef NTC
-	float t = NTC_temp( NTC_raw, NTC_KOSO );
+	//float t = NTC_temp( NTC_raw, NTC_KOSO );
+	float t = NTC_temp( NTC_raw, NTC_Volvo );
 	LL_ADC_ClearFlag_OVR(ADC1);
 	LL_ADC_REG_StartConversionSWStart(ADC1); // Trigger next regular ADC conversion
 	if ( (t<200.0) && (t>-50.0)) tempNTC = 0.99*tempNTC + 0.01*t; // if plausible: 1st order filter
@@ -216,10 +217,10 @@ void rc3_sprintf( char buf[] )
     #ifdef BRK
        float brake=analogRead(BRK)*percent;  // brake pedal sensor
     #else
-        float brake=40;  // brake pedal sensor not yet connected (not allowed in Karting)
+        float brake=40;  // brake pedal sensor not yet connected (not allowed in karting)
     #endif
     //float throttle=analogRead(A3)*percent;  // throttle pedal sensor
-    float throttle=50;  // throttle pedal sensor not yet connected (not allowed in Karting)
+    float throttle=50;  // throttle pedal sensor not yet connected (not allowed in karting)
     //float a5=0; //analogRead(A4)*percent;  // not yet connected
     //float a6=0; //analogRead(A5)*percent;  // not yet connected
     //float a7=0; //analogRead(A6)*percent;  // not yet connected
@@ -266,7 +267,7 @@ void rc3_sprintf( char buf[] )
 		tempTC, 			// a5 [degC] EGT -- exhaust gas temperature
 		gear_ratio );       // a6 [rev/m] engine revolution per travel over ground
 
-    Lambda_sprintf_FE_Batt_TLSU( buf + strlen(buf) );  // a7,a8,a9 = fuel excess, battery voltage and LSU temperature
+    Lambda_sprintf( buf + strlen(buf) );  // a7,a8,a9 = fuel excess, battery voltage and LSU temperature
 
     sprintf(buf + strlen(buf), ",%1.3f,%1.3f,%1.3f,%1.3f,%1.3f,%1.3f",
         1.0e-6*mag_lap,        // a10  lap time
