@@ -1,11 +1,20 @@
 # RaceTemp
-This repository contains software, electronics (input devices) and mechanical accessories for using a phone as karting logger and display.  You will need a phone with RaceChrono or TrackAddict.  The phone can show not only temperatures (water and exhaust gas), but also lap/sector times from sat.nav. (GPS) and other sensors like ignition probe (for engine RPM), accelerometer, gyro, engine knock, lambda, throttle, brake, etc. etc.  The recorded data can be reviewed later and you may also overlay the sensors onto your recorded video (e.g. from GoPro or phone).   [Link to video with sensor overlay](https://fb.watch/k7wkuMYCiB/)
+Software, electronics (input devices) and mechanical accessories for using a phone as karting logger and display.  
+The phone can show not only temperatures (water and exhaust gas), but also lap/sector times from sat.nav. (GPS) 
+and other sensors like ignition probe (for engine RPM), accelerometer, gyro, engine knock, lambda, throttle, brake, etc. etc.  
+The recorded data can be reviewed later and you may also overlay the sensors onto your recorded video (e.g. from GoPro or phone).  
+You will need a phone with RaceChrono or TrackAddict, and you will need to make your own input device.  
+[Link to video with sensor overlay](https://fb.watch/k7wkuMYCiB/)
 
 # "Mech" folder 
 Mechanical stuff: Electronics box, Battery holder, CAD models of the 3D-printed bracket and bezel I use for attaching my Oscal S80 phone to a Sodikart steering wheel -- they will probably not fit your phone or your steering wheel, but you are free to modify. If you make a pull request (or send your models to me), then I can also add your CAD models to the project.  
 
 # "Elec" folder 
 Electrical stuff: This folder is mostly empty (or not checked into Github).   
+
+# "Core" folder 
+Software, c-source code.  Auto-generated code from CubeMX also ends up in this folder, but will not 
+be checked in unless one change the .gitignore files or specifically adds the file to git.
 
 # How to get started with software for STM32: 
 1. Install STM32CubeIDE and STM32CubeMX on a PC  
