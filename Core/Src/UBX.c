@@ -368,7 +368,8 @@ void ubx_receive2(struct ubx_handle_t * ubx)
 
 /**
  * \brief Navigation configuration
- * ToDo: Consider using uCenter (and saving it there in stead)
+ * ToDo: Consider using uCenter (and save configuration there in stead).
+ *       uCenter is more flexible, at least for uBlox-modules with a USB interface.
  */
 void ubx_init( struct ubx_handle_t * ubx )
 {
@@ -412,8 +413,8 @@ void ubx_init( struct ubx_handle_t * ubx )
 	cfg_prt->reserved1 = 0x01;
 	cfg_prt->txReady = 0b0000000000000000;   // Bit field txReady (threshold, pin, polarity, enabler TX ready feature)
 	cfg_prt->mode = 0x000008d0;              //little endian
-	//cfg_prt->baudRate = 921600;              // Possible UART baud rates: 4800, 9600, 19200, 38400 (default for NEO M9N), 57600, 115200, 230400, 460800, 921600
-	cfg_prt->baudRate = 115200;              // Possible UART baud rates: 4800, 9600, 19200, 38400 (default for NEO M9N), 57600, 115200, 230400, 460800, 921600
+	cfg_prt->baudRate = 230400;              // Possible UART baud rates: 4800, 9600, 19200, 38400 (default for NEO M9N), 57600, 115200, 230400, 460800, 921600
+	//cfg_prt->baudRate = 115200;              // Possible UART baud rates: 4800, 9600, 19200, 38400 (default for NEO M9N), 57600, 115200, 230400, 460800, 921600
 	cfg_prt->inProtoMask = 0x0007;           // Bitfield, 7 = Rtcm + Nmea + Ubx
 	cfg_prt->outProtoMask = 0x0001;          // Bitfield  1 = Ubx only
 	cfg_prt->flags=0x0000;
@@ -488,8 +489,8 @@ void ubx_init( struct ubx_handle_t * ubx )
 	//U4* val_U4;
 	// ToDo: Clean up -- find a better way to make the key & value pairs
 	U4* key = (U4*) (cfg_valset + 1);
-	*key++ = CFG_RATE_MEAS; 					val_U2 = (U2 *) key;	*val_U2++ = 110;	key= (U4 *) val_U2;  // [ms] interval (i.e. inverse of a normal "RATE")
-	*key++ = CFG_RATE_NAV; 						val_U2 = (U2 *) key;	*val_U2++ =   1;	key= (U4 *) val_U2;
+	*key++ = CFG_RATE_MEAS; 					val_U2 = (U2 *) key;	*val_U2++ =  50;	key= (U4 *) val_U2;  // [ms] interval (i.e. inverse of a normal "RATE")
+	*key++ = CFG_RATE_NAV; 						val_U2 = (U2 *) key;	*val_U2++ =   2;	key= (U4 *) val_U2;
 	*key++ = CFG_MSGOUT_UBX_NAV_PVT_UART1; 		val_U1 = (U1 *) key;	*val_U1++ =   1;	key= (U4 *) val_U1;
 	//*key++ = CFG_MSGOUT_UBX_NAV_SAT_UART1; 	val_U1 = (U1 *) key;	*val_U1++ =  10;	key= (U4 *) val_U1;
 	*key++ = CFG_NAVSPG_DYNMODEL;	  			val_U1 = (U1 *) key;	*val_U1++ = UBX_DYN_AUTOMOTIVE;  key= (U4 *) val_U1;

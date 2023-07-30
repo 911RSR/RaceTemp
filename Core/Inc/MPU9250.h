@@ -1,7 +1,6 @@
 #ifndef MPU9250
 #define MPU9250
 #include <stdint.h> // for integer type definitions
-#include "main.h"  // for ADCrange
 #include "i2c.h"
 //#include "stm32f1xx_hal_i2c.h"
 

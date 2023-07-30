@@ -2,7 +2,7 @@
  * NTC.c
  *
  *  Created on: 20 Oct 2019
- *      Author: viggo
+ *      Author: DrMotor
  */
 
 #include "NTC.h"
