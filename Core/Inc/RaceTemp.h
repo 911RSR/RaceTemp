@@ -2,7 +2,7 @@
  * RaceTemp.h
  *
  *  Created on: 26 Oct 2019
- *      Author: viggo
+ *      Author: DrMotor
  *
  *
  *  C lang header for functions visible to main

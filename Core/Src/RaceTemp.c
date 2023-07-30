@@ -2,7 +2,7 @@
  * racetemp.c
  *
  *  Created on: 20 Oct 2019
- *      Author: viggo
+ *      Author: DrMotor
  */
 
 #include "RaceTemp.h"
@@ -33,8 +33,9 @@ uint32_t ign_diff=36000;  // initialize to >1 to avoid division by zero
 #define RC_TX_BUF_SIZE 1024
 #define RC_RX_BUF_SIZE 1024
 //static char rc_txBuf[256];  // The RC3 message it is actually approx. 138, but might be longer
-static char rc_txBuf[RC_TX_BUF_SIZE];  // larger buffer for sending also AT, NMEA and NBP...
-static char rc_rxBuf[RC_RX_BUF_SIZE];  // buffer for receiving messages
+static char rc_txBuf[RC_TX_BUF_SIZE]; // larger buffer for sending also AT, NMEA and NBP...
+static char rc_rxBuf[RC_RX_BUF_SIZE]; // buffer for receiving messages
+DMA_TypeDef * RC_dma_master = DMA2;
 
 void delay(const float sec)
 {
@@ -269,8 +270,8 @@ void rc3_sprintf( char buf[] )
 
     Lambda_sprintf( buf + strlen(buf) );  // a7,a8,a9 = fuel excess, battery voltage and LSU temperature
 
-    sprintf(buf + strlen(buf), ",%1.3f,%1.3f,%1.3f,%1.3f,%1.3f,%1.3f",
-        1.0e-6*mag_lap,        // a10  lap time
+    sprintf(buf + strlen(buf), "%1.3f,%1.3f,%1.3f,%1.3f,%1.3f",
+        //1.0e-6*mag_lap,        // a10  lap time
         1.0e-6*mag_split[0],   // a11  split time 0
         1.0e-6*mag_split[1],   // a12
         1.0e-6*mag_split[2],   // a13
@@ -290,6 +291,27 @@ void rc3_sprintf( char buf[] )
      //#endif
 }
 
+
+/**
+ * \brief           Check for new data received via DMA
+ *
+ * Not doing reads fast enough will cause DMA to overflow and loose data.
+ */
+/*void rc_receive()
+{
+    U1 *buf = rc_rxBuf;
+    size_t pos = UBX_RX_BUF_SIZE - LL_DMA_GetDataLength( RC_dma_master, LL_DMA_STREAM_5 );
+    size_t old_pos = RC_rx_pos;  // The saved position from last call is now old
+	RC_rx_pos = pos;   // Save current position as old for next call
+	if ( pos > old_pos ) {    		// New data is contiguous in buffer
+		rc_parse( ubx, rc_rxBuf[old_pos], pos - old_pos );
+	} else if ( pos < old_pos ) {  	// New data is split at tail and head of buffer
+		rc_parse( rc_rxBuf[old_pos], sizeof(rc_rxBuf) - old_pos );
+		rc_parse( rc_rxBuf[0], pos );
+	}
+}*/
+
+
 void RaceTemp()
 {
 	LL_ADC_EnableIT_EOCS(ADC1); // Enable end of conversion interrupt
@@ -305,11 +327,19 @@ void RaceTemp()
 	memset(rc_txBuf, 0, sizeof(rc_txBuf)); // clear the buffer
 	memset(rc_rxBuf, 0, sizeof(rc_rxBuf)); // clear the buffer
 
-	delay(0.5);  // for ESP boot and ADC stabilization
+	//ubx->rx_dma_channel = UBX_RX_DMA_CHANNEL;
+	/* LL_USART_Disable( RC_dev );
+	LL_DMA_SetPeriphAddress( RC_dma_master, LL_DMA_STREAM_5, LL_USART_DMA_GetRegAddr( RC_dev ));
+	LL_DMA_SetMemoryAddress( RC_dma_master, LL_DMA_STREAM_5, *rc_rxBuf );
+    LL_DMA_SetDataLength( RC_dma_master, LL_DMA_STREAM_5, sizeof(rc_rxBuf) );
+    //LL_USART_EnableIT_IDLE( RC_dev );
+	LL_USART_Enable( RC_dev ); */
+
+	delay(0.5);  // for ESP boot and ADC stabilisation
 
     // HC-06 is in AT mode by default, and stays that way until a device connects with it.
 	// "AT" strings to the HC-06 do not need termination by \n \r.
-	// The HC-06 "should" always wake up at default baudrate 9600 bps, but it does not.
+	// The HC-06 "should" always wake up at default baud rate 9600 bps, but it does not...
 	// The HC-06 responds after a second or so, therefore is inserted delays here.
 	//send_string("AT+BAUDC"); // set baud rate to 132400, should work with HC06, BT06 and others with Linvor firmware
 	//send_string("AT+DEFAULT");
@@ -469,7 +499,7 @@ void RaceTemp()
 			//rc3_sprintf( rc_txBuf );
 			rc3_sprintf( rc_txBuf + strlen(rc_txBuf) );
 
-		    //LambdaShield_nbp_sprintf( rc_buf + strlen(rc_buf) );
+		    //Lambda_nbp_sprintf( rc_txBuf + strlen(rc_txBuf) );
 			RaceTemp_AT_CIPSEND( rc_txBuf );
 			rc_txBuf[0]=0; // set length = 0;
 		}
