@@ -37,14 +37,28 @@ The code is still mostly compatible with HC06, but the ESP01 is better.
 # 4 Sat.Nav. receiver and antenna  
 Ublox Neo M9N module.  
 Ceramic patch antena, size 25x25 mm, active (w/amplifier), 28 dBi,  10 mA 3.3 to 5 V.  
+The antenna can be placed inside the electronics box (if using a plastic box and the orientation is correct), or one can use an external antenna (via a coax. cable). 
+
 Quote from ref. [1]: "There is no need for the antenna LNA gain to exceed 26 dB for use with u-blox receivers (at the RF input). With shorter
 cables and a gain above 35 dB, an overload condition might occur on some receivers."
 
-Ceramic patch antena, size 25x25 mm, connected via a short (30 mm) coax to the Sat.Nav. receiver.  
 The antenna should have the ceramic side up and little obstructions towards the sky, and the metallic side down towards a ground plane.
 I.e.: No cables or circuit boards (and little of other stuff) above the antenna.
 
-The antenna can be placed inside the electronics box (if using a plastic box and the orientation is correct). 
+**Neo M9N module vs. "RaceBox Mini" (or similar devices)**:
+
+RaceChrono app on the phone can record simultaneous data from both RaceBox Mini and DIY devices like RaceTemp.
+Temperatures, RPM, etc. will then come from RaceTemp, while navigation data will come from RaceBox Mini.
+
+Advantages of RaceBox Mini:
+1. Easier to use -- no wires, except USB cable for battery charging
+2. Higher precision -- more accurate navigation data
+3. Reliable connection to the phone -- DIY devices like HC06 or ESP01 might lose/drop the connection.
+
+Advantages of Neo M9N module:
+1. Lower price (approx $50, vs $200 for a RaceBox Mini)
+2. One less battary to charge and maintain
+3. RaceTemp with both a Sat.Nav. module and RPM probe can calculate the gear ratio (as speed/RPM)
 
 # 5. Ignition probe for engine RPM  
 This is just a wire and some protection diodes connected to one of the microcontroller's timer inputs.    
