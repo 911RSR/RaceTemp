@@ -10,7 +10,7 @@ You will need a phone with RaceChrono or TrackAddict, and you will need to make 
 Mechanical stuff: Electronics box, Battery holder, CAD models of the 3D-printed bracket and bezel I use for attaching my Oscal S80 phone to a Sodikart steering wheel -- they will probably not fit your phone or your steering wheel, but you are free to modify. If you make a pull request (or send your models to me), then I can also add your CAD models to the project.  
 
 # "Elec" folder 
-Electrical stuff: This folder is mostly empty (or not checked into Github).   
+Electrical stuff: Information about sensors and circuits used.     
 
 # "Core" folder 
 Software, c-source code.  Auto-generated code from CubeMX also ends up in this folder, but will not 
@@ -22,8 +22,8 @@ be checked in unless one change the .gitignore files or specifically adds the fi
 3. In CubeIDE you edit whatever you need in the source code.  You should at least:  
     a) Change the network SSID and password in Core/Inc/pass.h (unless you are comfortable with "MySSID" and "MyPassword"), and  
     b) Enable "use float with printf...".  Right-click on RaceTemp in the left pane (project tree), select C/C++Build --> Settings --> MCU Settings --> Check the box for "Use float printf..." --> Apply and Close  
-4. When the project compiles OK, then connect your debugger and download to the microcontroller.  
-5. Connect your phone via WiFi to "MySSID".  Start/install "Serial WiFi Terminal" on your phone to view the messages    
+4. When the project compiles OK, then connect your debugger and download to the microcontroller.  It is also possible to download via USB (e.g. from Arduino or STM32CubeProgrammer), but seriously: Get a debugger!  STlink v2 clones are almost free...   
+5. Connect your phone via WiFi to "MySSID" (or whatever you called it, see step #3a).  Start/install "Serial WiFi Terminal" on your phone to view the messages    
 6. Tasks and scheduling is handled via FreeRTOS.  Four OS tasks are defined via CubeMX (and generated into Core/Src/freertos.c):  
    a) DefaultTsk --> the idle task  
    b) LambdaTsk --> lambda_2.c -- interface to a Bosch LSU-ADV O2-sensor via a Bosch CJ125 ASIC  
