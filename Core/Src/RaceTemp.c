@@ -159,6 +159,18 @@ void send_string(char* str) {
     *(str-len)=0; // clear the buffer, strlen=0
 }
 
+
+/**
+ * \brief send TxBuf via DMA and USART
+ */
+void send_txBuf_DMA() {
+	LL_DMA_DisableStream( DMA2, LL_DMA_STREAM_7 );
+	LL_DMA_SetDataLength( DMA2, LL_DMA_STREAM_7, strlen(rc_txBuf) );
+	LL_DMA_EnableStream( DMA2, LL_DMA_STREAM_7 );
+	LL_USART_EnableDMAReq_TX( RC_dev );
+}
+
+
 /**
  * \brief           Send AT+CIPSEND and string to USART
  * \param[in]       str: String to send
@@ -172,8 +184,10 @@ void RaceTemp_AT_CIPSEND(char* str) {
 		sprintf(&at_com[13],"%u\r\n",len);
 		send_string( at_com );
 		//send_string("AT+CIPSEND=0,100\r\n");
+		//delay(0.003);  // wait for ">"  ToDo: Read and check the response
 		delay(0.001);  // wait for ">"  ToDo: Read and check the response
-		send_string(str);
+		//send_string(str);
+		send_txBuf_DMA();
 		//delay(0.02);  // wait for "OK"  ToDo: Read and check the response
 	}
 }
@@ -270,8 +284,8 @@ void rc3_sprintf( char buf[] )
 
     Lambda_sprintf( buf + strlen(buf) );  // a7,a8,a9 = fuel excess, battery voltage and LSU temperature
 
-    sprintf(buf + strlen(buf), "%1.3f,%1.3f,%1.3f,%1.3f,%1.3f",
-        //1.0e-6*mag_lap,        // a10  lap time
+    sprintf(buf + strlen(buf), ",%1.1f,%1.1f,%1.1f,%1.1f,%1.1f",
+        //1.0e-6*mag_lap,      // a10  lap time
         1.0e-6*mag_split[0],   // a11  split time 0
         1.0e-6*mag_split[1],   // a12
         1.0e-6*mag_split[2],   // a13
@@ -370,22 +384,37 @@ void RaceTemp()
 	 * 		0 broadcast SSID of ESP8266 soft-AP
 	 * 		1 do not broadcast SSID of ESP8266 soft-AP
 	 */
-	send_string( CWSAP_CUR );  // <---- EDIT this in pass.h
+	send_string( CWSAP );  // <---- EDIT this in pass.h
 	delay(1.0);
 	send_string( "ATE0\r\n" ); // Echo off
-	delay(0.005);
+	delay(0.1);
 
 	// ESP8266 supports baud rates up to 115200*40 = 4608000, but 1000000 seems to be more reliable (for me)
-	send_string( "AT+UART_CUR=1000000,8,1,0,0\r\n" ); // 8 bits, 1 stop bit, no parity, flow control
-	delay(0.005);
+	// Version 2.2 of the ESP01 AT-firmware does not support 4608000 (?)
+	const uint32_t baudrate=2000000;
+	sprintf( rc_txBuf,"AT+UART_CUR=%lu,8,1,0,0\r\n",baudrate ); // 8 bits, 1 stop bit, no parity, flow control"
+	send_string( rc_txBuf );
+
+	delay(0.1);
 	LL_USART_Disable( RC_dev );
 	// LL_USART_SetBaudRate( BT_dev, 170000000U, LL_USART_PRESCALER_DIV1, LL_USART_OVERSAMPLING_16, 115200 );
-	LL_USART_SetBaudRate( RC_dev, 96000000U, LL_USART_OVERSAMPLING_16, 1000000 );
+	//LL_USART_SetBaudRate( RC_dev, 96000000U, LL_USART_OVERSAMPLING_16, 1000000 );
+
+	// PCLK2 is used for USART1 = RC_dev.
+	// ToDo: Clean up this code so that it does not need to know that PCLK2 is used for RC_dev!
+	LL_RCC_ClocksTypeDef RCC_Clocks;
+	LL_RCC_GetSystemClocksFreq( &RCC_Clocks );
+	LL_USART_SetBaudRate( RC_dev, RCC_Clocks.PCLK2_Frequency, LL_USART_OVERSAMPLING_16, baudrate );
 
 	LL_DMA_SetPeriphAddress( DMA2, LL_DMA_STREAM_5, LL_USART_DMA_GetRegAddr( RC_dev ) );
+	LL_DMA_SetPeriphAddress( DMA2, LL_DMA_STREAM_7, LL_USART_DMA_GetRegAddr( RC_dev ) );
 	LL_DMA_SetMemoryAddress( DMA2, LL_DMA_STREAM_5, (uint32_t) rc_rxBuf );
+	LL_DMA_SetMemoryAddress( DMA2, LL_DMA_STREAM_7, (uint32_t) rc_txBuf );
+	LL_DMA_EnableIT_TC(DMA2, LL_DMA_STREAM_7);
     LL_DMA_SetDataLength( DMA2, LL_DMA_STREAM_5, RC_RX_BUF_SIZE );
+    LL_DMA_SetDataLength( DMA2, LL_DMA_STREAM_7, RC_TX_BUF_SIZE );
 	LL_USART_EnableDMAReq_RX( RC_dev );
+	LL_USART_EnableDMAReq_TX( RC_dev );
 	LL_DMA_EnableStream( DMA2, LL_DMA_STREAM_5 );
 
 	LL_USART_Enable( RC_dev );
@@ -393,12 +422,26 @@ void RaceTemp()
 	//while((!(LL_USART_IsActiveFlag_TEACK(BT_dev))) || (!(LL_USART_IsActiveFlag_REACK(BT_dev))));
 	//sprintf(rc_buf,"AT+UART=1382400,0,0\r\n");  // alternative in case AT+BAUD is not recognised (my HC06 does not respond to "AT+BAUDB\r\n")
 
-	send_string( "AT\r\n");
-	delay(0.005);
-		//send_string( "AT+UART?\r\n");
-		//delay(1.0);
-	send_string( "AT+GMR\r\n");
-	delay(0.020);
+	//send_string( "AT\r\n");
+	sprintf( rc_txBuf,"AT\r\n");
+	send_txBuf_DMA();
+	//LL_DMA_SetDataLength( DMA2, LL_DMA_STREAM_7, strlen(rc_txBuf) );
+	//LL_DMA_EnableStream( DMA2, LL_DMA_STREAM_7 );
+
+	delay(0.1);
+	//LL_DMA_DisableStream( DMA2, LL_DMA_STREAM_7 );
+	//send_string( "AT+UART?\r\n");
+	//delay(1.0);
+	//send_string( "AT+GMR\r\n");
+	//sprintf( rc_txBuf,"AT+GMR\r\n");
+	sprintf( rc_txBuf,"AT+GMR\r\n" );
+	send_txBuf_DMA();
+	delay(0.1);
+
+	// Request the ESP to do not store settings in flash
+	sprintf( rc_txBuf,"AT+SYSSTORE=0\r\n" );
+	send_txBuf_DMA();
+	delay(0.1);
 
 	/*
 	 * uint32_t baudrates[]={1200, 2400, 4800, 9600, 19200, 28800, 38400, 57600, 115200, 230400, 460800, 921600, 1382400};
@@ -413,21 +456,33 @@ void RaceTemp()
 		send_string( "AT+VERSION\r\n");  // expecting reply "OK" in the logic analyser
 		delay(2.000);
 	}*/
-	send_string( "AT+CWMODE_CUR=2\r\n"); // 2 = softAP mode (allow phone to connect via WiFi)
-	delay(0.010);
+	send_string( "AT+CWMODE=2\r\n"); // 2 = softAP mode (allow phone to connect via WiFi)
+	delay(0.10);
 	send_string( "AT+CIPMODE=0\r\n" );  // Prepare normal mode
-	delay(0.005);
+	delay(0.1);
 	send_string( "AT+CIFSR\r\n" );  // Query IP address
-	delay(0.005);
-	send_string( "AT+CIPMUX=1\r\n"); // Enable multiple connections.
-	delay(0.005);
+	delay(0.1);
+	send_string( "AT+CIPMUX=1\r\n"); // Enable multiple connections --> no pass-through mode
+	delay(0.1);
 	send_string( "AT+CIPSERVER=1\r\n"); // Create a TCP server. Default port = 333
 	delay(1.000);  // wait for connection
+
+	// *** Problems with ESP01 CIPSEND ***
+	// The response times are inconsistent -- sometimes > 0.1 s.  This leads to loss of data.
+	// Solution to this could be to use pass-through mode...
+
+	// ***Problems with ESP01's Pass-through mode***
+	// 1. RaceChrono only connects via TCP to ESP01 in AP mode.
+	// 2. WiFi TCP pass-through mode ***not*** available in ESP01 AP mode.
+	// 3. WiFi ***UDP*** pass-through mode ***is*** available in ESP01 AP mode (but RaceChrono does not support UDP).
+	// 4. WiFi TCP pass-through mode ***is*** available in ESP01 Station mode (but RaceChrono does not support this).
+	// Preliminary conclusion: RaceChrono is not compatible with the ESP01's pass-through mode
+	//
 	//send_string( "AT+CIPMODE=1\r\n" );  // Prepare UART-WiFi pass-through mode
 	//delay(0.005);
 	//send_string( "AT+CIPSTART=1\r\n" );  // Prepare UART-WiFi pass-through mode
 	//delay(0.005);
-	//send_string( "AT+CIPSEND\r\n" );  // Start sending
+	//send_string( "AT+CIPSEND\r\n" );  // Start sending Enter Wi-Fi Pass-through mode
 	//delay(0.010);
 
 #ifdef UBX_NAVI
@@ -445,6 +500,7 @@ void RaceTemp()
 	//LL_SPI_Disable( MAX6675_dev );
 	//delay(0.010);
 
+	rc_txBuf[0]=0; // set length = 0;
 	rc3_time = HAL_GetTick();
 	TC_time = rc3_time;
 	while(1)
@@ -500,6 +556,7 @@ void RaceTemp()
 			rc3_sprintf( rc_txBuf + strlen(rc_txBuf) );
 
 		    //Lambda_nbp_sprintf( rc_txBuf + strlen(rc_txBuf) );
+			//send_txBuf_DMA();
 			RaceTemp_AT_CIPSEND( rc_txBuf );
 			rc_txBuf[0]=0; // set length = 0;
 		}
