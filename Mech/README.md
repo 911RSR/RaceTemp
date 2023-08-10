@@ -1,6 +1,7 @@
  
 # Electronics Box  
-![Electronics Box picture](electronics_box.jpg)  
+![Electronics Box picture](electronics_box.jpg)  ![Electronics Box picture](electronics_box_with_wires.jpg)  
+
 I have a water proof box like this zip-tied under the front edge of my go kart seat.  I removed the foam and attached the electronics with velcro tape inside the box.  
 This box is not ideal with respect to ESD protection, and the location is not ideal for the Sat.Nav. antenna, but it seems to work equally well as an external antenna at a higher/better location.  
 I purchased the box here: https://www.aliexpress.com/item/1005002519049999.html 
