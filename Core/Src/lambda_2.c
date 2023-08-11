@@ -78,7 +78,7 @@ float IP = 0.0f;
 float FuelExcess = 0.0f;
 float Lambda = 0.0f;
 volatile float Heater_power = 0.0f;
-float P_heater_max = 0.0f;
+//float P_heater_max = 0.0f;
 float R_heater = 3.0;  // [Ohm] initial value = measured at room temp. on a LSU ADV
 
 void LS_delay(const unsigned int ms)
@@ -245,7 +245,7 @@ void heat_up()
 	CJ125_COM_SPI( CJ125_INIT_REG2_20uA );
 
 	// Constant 12.5W for 1.5 s
-	P_heater_max = 12.5f;
+	heater.max = 12.5f;
 	for (int i=0; i<15; i++ )
 	{
 		set_heater_led;
@@ -256,19 +256,19 @@ void heat_up()
 
 	// Ramp up phase to 750.0 degC
 	// 1 W/s until 20 W from 12.5 W
-	P_heater_max = 12.5f;
+	heater.max = 12.5f;
 	do {
 		set_heater_led;
 		LS_delay( 50 );
 		reset_heater_led;
 		LS_delay( 50 );
-		if ( P_heater_max <= 19.91f ) P_heater_max += 0.1f; //Increase power by 0.1 W
+		if ( heater.max <= 19.91f ) heater.max += 0.1f; //Increase power by 0.1 W
 	} while ( ( T_LSU < 750.0f) && (UBAT > UBAT_MIN) );
 }
 
 void calibrate()
 {
-	P_heater_max = 0.0f;  // turn off the heat during calibration
+	heater.max = 0.0f;  // turn off the heat during calibration
 	LS_delay( 100 );
 	do  //Wait until power is present and CJ125 reports ready.
 	{
@@ -350,7 +350,7 @@ void Lambda_task()  // to be called by OS
 	//LL_GPIO_SetPinPull(CJ125_NSS_GPIO_Port, CJ125_NSS_Pin, LL_GPIO_PULL_UP);
 	if( !LL_SPI_IsEnabled( CJ125_dev ) ) LL_SPI_Enable( CJ125_dev );
 
-	P_heater_max = 0.0f;  // no heater output for now
+	heater.max = 0.0f;  // no heater output for now
 	set_heater( 0.0f );
 
 	// TIM4 TRGO triggers injected ADC channels
