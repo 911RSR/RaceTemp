@@ -102,7 +102,7 @@ uint16_t CJ125_COM_SPI( uint16_t TX_data )
 {
 	//Configure SPI for CJ125 controller.  -- moved to spi.c (config is done via CubeMX)
 	LL_GPIO_ResetOutputPin( CJ125_NSS_GPIO_Port, CJ125_NSS_Pin );   //Set chip select pin low, chip in use.
-	LS_delay(1);
+	//LS_delay(1);
 	LL_SPI_ReceiveData16( CJ125_dev ); // clear RX register
 	LL_SPI_TransmitData16( CJ125_dev, TX_data );
 	while ( CJ125_dev->SR & SPI_SR_BSY );  // wait...
