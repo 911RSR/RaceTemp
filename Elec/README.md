@@ -5,7 +5,7 @@
 4. Sat.Nav.(GPS) module and antenna for lap/split times, speed and acceleration
 5. Ignition probe for engine RPM
 6. Gyro/accelerometer: MPU9250
-7. $\lambda$ or O<sub>2</sub> wideband sensor (not yet tested)
+7. $\lambda$ or O<sub>2</sub> wideband sensor
 8. Knock sensor  (not yet implemented)  
 
 You can of course add your own selection of other sensors -- see for example the pedal sensor in the Mech folder.  My plan:  

@@ -1,6 +1,7 @@
  
 # Electronics Box  
-![Electronics Box picture](electronics_box.jpg)  
+![Electronics Box picture](electronics_box.jpg)  ![Electronics Box picture](electronics_box_with_wires.jpg)  
+
 I have a water proof box like this zip-tied under the front edge of my go kart seat.  I removed the foam and attached the electronics with velcro tape inside the box.  
 This box is not ideal with respect to ESD protection, and the location is not ideal for the Sat.Nav. antenna, but it seems to work equally well as an external antenna at a higher/better location.  
 I purchased the box here: https://www.aliexpress.com/item/1005002519049999.html 
@@ -10,7 +11,7 @@ The elctronics can be powered by a single 18650 LiPo cell, which can be located 
 Here is a holder for 18650 cell: https://www.aliexpress.com/item/1005001660193629.html. 
 I recommend using a cell with integrated over-discharge protection -- so that it will not be damaged in case one forgets to switch off the logger. 
 However; the O2 sensor (Lambda) requires 12 V.  One can connect it to the start battery (if the kart/vehicle has one), but my kart did not have 12 V, 
-so I use my wrench/drill battery instead -- i mean; as long as I do not screw or drill while driving; the battery is idle and free to use for the electronics...     
+so I use my 18 V wrench/drill battery instead -- i mean; as long as I do not screw or drill while driving; the battery is idle and free to use for the electronics...     
 ![Cordless drill battery holder, picture](battery_holder.jpg)  
 I purchased my battery holder here:  https://www.aliexpress.com/item/1005004578692099.html and attached it to the seat.  
 
