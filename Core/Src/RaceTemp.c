@@ -325,22 +325,8 @@ void rc3_sprintf( char buf[] )
 	}
 }*/
 
-
-void RaceTemp()
+void SetupESP8266()
 {
-	LL_ADC_EnableIT_EOCS(ADC1); // Enable end of conversion interrupt
-	LL_ADC_Enable(ADC1);
-
-	LL_TIM_CC_EnableChannel(TIM2,LL_TIM_CHANNEL_CH1|LL_TIM_CHANNEL_CH2);
-	LL_TIM_EnableCounter(TIM2); // Start the timer for ignition probe and lap times
-	LL_TIM_EnableIT_CC1(TIM2);
-	LL_TIM_EnableIT_CC2(TIM2);
-	LL_TIM_ClearFlag_CC1(TIM2);
-	LL_TIM_ClearFlag_CC2(TIM2);
-
-	memset(rc_txBuf, 0, sizeof(rc_txBuf)); // clear the buffer
-	memset(rc_rxBuf, 0, sizeof(rc_rxBuf)); // clear the buffer
-
 	//ubx->rx_dma_channel = UBX_RX_DMA_CHANNEL;
 	/* LL_USART_Disable( RC_dev );
 	LL_DMA_SetPeriphAddress( RC_dma_master, LL_DMA_STREAM_5, LL_USART_DMA_GetRegAddr( RC_dev ));
@@ -391,7 +377,7 @@ void RaceTemp()
 
 	// ESP8266 supports baud rates up to 115200*40 = 4608000, but 1000000 seems to be more reliable (for me)
 	// Version 2.2 of the ESP01 AT-firmware does not support 4608000 (?)
-	const uint32_t baudrate=2000000;
+	const uint32_t baudrate=1000000;
 	sprintf( rc_txBuf,"AT+UART_CUR=%lu,8,1,0,0\r\n",baudrate ); // 8 bits, 1 stop bit, no parity, flow control"
 	send_string( rc_txBuf );
 
@@ -484,6 +470,48 @@ void RaceTemp()
 	//delay(0.005);
 	//send_string( "AT+CIPSEND\r\n" );  // Start sending Enter Wi-Fi Pass-through mode
 	//delay(0.010);
+}
+
+// Setup USART and DMA.
+// An ESP32s3 is running the UART to WiFi bridge (Arduino sketch)
+void SetupUARTtoWiFi()
+{
+	// PCLK2 is used for USART1 = RC_dev.
+	// ToDo: Clean up this code so that it does not need to know that PCLK2 is used for RC_dev!
+	LL_RCC_ClocksTypeDef RCC_Clocks;
+	LL_RCC_GetSystemClocksFreq( &RCC_Clocks );
+	// ESP32s3 supports baud rates up to 115200*40 = 4608000 (or?), but 1000000 is plenty for our use
+	LL_USART_SetBaudRate( RC_dev, RCC_Clocks.PCLK2_Frequency, LL_USART_OVERSAMPLING_16, 1000000 );
+	LL_DMA_SetPeriphAddress( DMA2, LL_DMA_STREAM_5, LL_USART_DMA_GetRegAddr( RC_dev ) );
+	LL_DMA_SetPeriphAddress( DMA2, LL_DMA_STREAM_7, LL_USART_DMA_GetRegAddr( RC_dev ) );
+	LL_DMA_SetMemoryAddress( DMA2, LL_DMA_STREAM_5, (uint32_t) rc_rxBuf );
+	LL_DMA_SetMemoryAddress( DMA2, LL_DMA_STREAM_7, (uint32_t) rc_txBuf );
+	LL_DMA_EnableIT_TC(DMA2, LL_DMA_STREAM_7);
+    LL_DMA_SetDataLength( DMA2, LL_DMA_STREAM_5, RC_RX_BUF_SIZE );
+    LL_DMA_SetDataLength( DMA2, LL_DMA_STREAM_7, RC_TX_BUF_SIZE );
+	LL_USART_EnableDMAReq_RX( RC_dev );
+	LL_USART_EnableDMAReq_TX( RC_dev );
+	LL_DMA_EnableStream( DMA2, LL_DMA_STREAM_5 );
+	LL_USART_Enable( RC_dev );
+}
+
+void RaceTemp()
+{
+	LL_ADC_EnableIT_EOCS(ADC1); // Enable end of conversion interrupt
+	LL_ADC_Enable(ADC1);
+
+	LL_TIM_CC_EnableChannel(TIM2,LL_TIM_CHANNEL_CH1|LL_TIM_CHANNEL_CH2);
+	LL_TIM_EnableCounter(TIM2); // Start the timer for ignition probe and lap times
+	LL_TIM_EnableIT_CC1(TIM2);
+	LL_TIM_EnableIT_CC2(TIM2);
+	LL_TIM_ClearFlag_CC1(TIM2);
+	LL_TIM_ClearFlag_CC2(TIM2);
+
+	memset(rc_txBuf, 0, sizeof(rc_txBuf)); // clear the buffer
+	memset(rc_rxBuf, 0, sizeof(rc_rxBuf)); // clear the buffer
+
+	//SetupESP8266();
+	SetupUARTtoWiFi();
 
 #ifdef UBX_NAVI
 	ubx_init( &ubx );
@@ -556,8 +584,8 @@ void RaceTemp()
 			rc3_sprintf( rc_txBuf + strlen(rc_txBuf) );
 
 		    //Lambda_nbp_sprintf( rc_txBuf + strlen(rc_txBuf) );
-			//send_txBuf_DMA();
-			RaceTemp_AT_CIPSEND( rc_txBuf );
+			send_txBuf_DMA();
+			//RaceTemp_AT_CIPSEND( rc_txBuf ); // for EESP8266 AT-mode
 			rc_txBuf[0]=0; // set length = 0;
 		}
 		//delay( 0.01 ); // ToDo: Wait for "SEND OK" from ESP8266

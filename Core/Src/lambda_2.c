@@ -87,7 +87,12 @@ void LS_delay(const unsigned int ms)
 	//HAL_Delay(ms);
 }
 
+// Set the LSU heater power to
 
+/*@brief Set the LSU heater power
+ * Calculate the PWM duty cycle and set the compare register of TIM4 channel 2.
+ *@param P [W] heater power
+ */
 void set_heater( const float P )
 {
 	//float duty = ( U_RMS * U_RMS ) / ( UBAT * UBAT );
@@ -124,16 +129,15 @@ struct PID{
 	float iState, last_delta;
 };
 
-
 struct PID heater={
 		.kP = 0.1f,     // [W/NV] Proportional gain.
-		.kI = 0.05f,
-		.kD = 0.0f,
-		.iMin = 0.0f,
-		.iMax = 12.0f,
-		.min = 0.0f,
-		.max = 15.0f,
-		.iState = 0.0f,
+		.kI = 0.05f,    // Integral gain
+		.kD = 0.0f,		// Differential gain
+		.iMin = 0.0f,	// [W] Min value for integration
+		.iMax = 12.0f,  // [W] Max value for integration
+		.min = 0.0f,    // [W]
+		.max = 0.0f,	// [W]
+		.iState = 0.0f, // Integral state
 		.last_delta = 0.0f
 };
 
@@ -143,8 +147,6 @@ struct CJ125{
 	volatile float T_LSU;
 	// ..etc, etc.
 };
-
-
 
 
 // Temperature regulating PID.  Return value = heater power [W] to be applied to the LSU
@@ -166,11 +168,12 @@ float PID_Control( struct PID pid, float delta )
 /*@brief Calculation of fuel excess ratio
  * > 0.0 ---> rich, e.g. 0.3 means 30% fuel excess relative to stoichiometric
  * < 0.0 ---> lean, e.g. -0.2 means 20% fuel is "missing" for stoichiometric combustion
+ * The values are based on the LSU ADV's datasheet
  *@param IP [mA] measured pump current
  */
 float fuel_excess_ratio( const float IP )
 {
-    float F_rich = -0.3761f * IP - 0.01f;  // parameters based on LSU ADV datasheet
+    float F_rich = -0.3761f * IP - 0.01f;
     float F_lean = -0.7577f * IP - 0.02f;
     if ( F_lean < F_rich ) return F_lean;
     else return F_rich;
@@ -204,11 +207,11 @@ void Lambda_nbp_sprintf( char buf[] )
 	sprintf(buf + strlen(buf),"\"LSU Temp\",\"C\":%.1f\n#\n", T_LSU );
 }
 
-/* @brief Write fuel excess, battery voltage and LSU temperature to a string (text buffer)
+/* @brief Write fuel excess [%], battery voltage and LSU temperature to a string (text buffer)
 */
 void Lambda_sprintf( char buf[] )
 {
-	sprintf(buf,",%.2f,%.1f,%.1f,%.1f", Lambda, UBAT, T_LSU, Heater_power );
+	sprintf(buf,",%.1f,%.1f,%.1f,%.1f", FuelExcess*100, UBAT, T_LSU, Heater_power );
 }
 
 
@@ -318,29 +321,30 @@ void calibrate()
 void fault_handler( uint16_t status )
 {
 	LS_fault_counter++;
-	do{  // Stay in the fault handler, fast alternating the LEDs, until CJ125_diag == CJ125_DIAG_REG_STATUS_OK
+	/*do{
+		// Stay in the fault handler, fast alternating the LEDs, until CJ125_diag == CJ125_DIAG_REG_STATUS_OK
+		// The heater control will still run via interrupt
+		if ( (CJ125_diag & (1<<9)) == 0 )  // The LSU is getting too hot  ??
+		{
+			heater.iState = 8.5;  // [W]  Reset the integral state
+			set_heater( 0.0f );   // [W]  Temporarily turn heater off.
+		}
 		reset_power_led;
 		set_power_led;
 		LS_delay( 50 );
 		reset_power_led;
 		LS_delay( 50 );
-		heater.iState = 8.5;        // [W]  Adjust the integral state.
-		if ( (CJ125_diag & 0x0200) == 0 )  // The LSU is getting too hot  ??
-		{
-			set_heater( 0.0f );  // [W]  Temporarily turn heater off.
-			CJ125_diag |= 0x0200;
-			return; // no need to re-heat and calibrate
-		}
 		CJ125_diag = CJ125_COM_SPI( CJ125_DIAG_REG_REQUEST ); //Update CJ125 diagnostic via SPI.
 	} while ( CJ125_diag != CJ125_DIAG_REG_STATUS_OK );
 	calibrate();
 	heat_up();
+	*/
 }
 
 
 void Lambda_task()  // to be called by OS
 {
-	//Start of operation. (Test LED's).
+	// Test the LEDs -- observe a flash from both
 	set_power_led;
 	set_heater_led;
 	LS_delay( 200 );
@@ -350,7 +354,7 @@ void Lambda_task()  // to be called by OS
 	//LL_GPIO_SetPinPull(CJ125_NSS_GPIO_Port, CJ125_NSS_Pin, LL_GPIO_PULL_UP);
 	if( !LL_SPI_IsEnabled( CJ125_dev ) ) LL_SPI_Enable( CJ125_dev );
 
-	heater.max = 0.0f;  // no heater output for now
+	//heater.max = 0.0f;  // no heater output for now
 	set_heater( 0.0f );
 
 	// TIM4 TRGO triggers injected ADC channels
@@ -374,16 +378,15 @@ void Lambda_task()  // to be called by OS
 		Lambda = 1.0f / ( FuelExcess + 1.0f );
 
 		CJ125_diag = CJ125_COM_SPI( CJ125_DIAG_REG_REQUEST ); //Update CJ125 diagnostic
-		if ( UBAT >= UBAT_MIN ) CJ125_diag |= 0x0100; // set a bit indicating that the voltage read by MCU is OK
-		if ( T_LSU < 900.0f)    CJ125_diag |= 0x0200; // LSU is not too hot for accuracy and durability
-		if ( T_LSU > 400.0f)    CJ125_diag |= 0x0400; // LSU is not way too cold (cold is OK only during start-up)
-		if ( CJ125_diag != CJ125_OK )
-			{
-				fault_handler( CJ125_diag );
-			}
+		if ( UBAT >= UBAT_MIN ) CJ125_diag |= 1<< 8; // set a bit indicating that the voltage read by MCU is OK
+		if ( T_LSU < 900.0f)    CJ125_diag |= 1<< 9; // LSU is not too hot for accuracy and durability
+		if ( T_LSU > 400.0f)    CJ125_diag |= 1<<10; // LSU is not way too cold (cold is OK only during start-up)
+		if ( CJ125_diag != CJ125_OK ) fault_handler( CJ125_diag );
 	}
 }
 
+
+// ToDo: use the NTC.h instead of repeating the code here
 float LSU_ADV_temp_Steinhart()
 {
 	// Estimation of LSU temperature using a Steinhart–Hart equation
