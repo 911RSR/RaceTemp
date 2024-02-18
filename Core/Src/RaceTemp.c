@@ -481,7 +481,7 @@ void SetupUARTtoWiFi()
 	LL_RCC_ClocksTypeDef RCC_Clocks;
 	LL_RCC_GetSystemClocksFreq( &RCC_Clocks );
 	// ESP32s3 supports baud rates up to 115200*40 = 4608000 (or?), but 1000000 is plenty for our use
-	LL_USART_SetBaudRate( RC_dev, RCC_Clocks.PCLK2_Frequency, LL_USART_OVERSAMPLING_16, 1000000 );
+	LL_USART_SetBaudRate( RC_dev, RCC_Clocks.PCLK2_Frequency, LL_USART_OVERSAMPLING_16, 230400 );
 	LL_DMA_SetPeriphAddress( DMA2, LL_DMA_STREAM_5, LL_USART_DMA_GetRegAddr( RC_dev ) );
 	LL_DMA_SetPeriphAddress( DMA2, LL_DMA_STREAM_7, LL_USART_DMA_GetRegAddr( RC_dev ) );
 	LL_DMA_SetMemoryAddress( DMA2, LL_DMA_STREAM_5, (uint32_t) rc_rxBuf );

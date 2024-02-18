@@ -5,15 +5,21 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
-const char *ssid = "YourAP";   // Set these to your desired credentials.
-const char *password = "YourPass";  // A valid password must have more than 7 characters
+const char *ssid = "yourAP";   // Set these to your desired credentials.
+const char *password = "yourPass";  // A valid password must have more than 7 characters
+volatile uint8_t toggle=0;
 
 WiFiServer server(333);
 void setup() {
+  digitalWrite(LED_BUILTIN,1);  // Flash the LED to show activity
+  delay(100);
+  digitalWrite(LED_BUILTIN,0);
   // Using a USB (Serial) to PC for debug messages
   Serial.begin(115200);
   Serial.print("\nConfiguring access point\n");
-  Serial1.begin(1000000,SERIAL_8N1,17,18);  // GPIO pins: RX1=17, TX1=18 ?  only RX is used in this sketch
+  Serial1.begin(230400,SERIAL_8N1,18,17);  //  only RX is used in this sketch
+  // RX1 = U1RXD = connector J1 pin 11, name "18" according to devkitc user guide
+  // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html 
 
   if (!WiFi.softAP(ssid, password)) {
     log_e("Soft AP creation failed.");
@@ -21,7 +27,7 @@ void setup() {
   }
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address:");
-  Serial.println("myIP");
+  Serial.println( myIP );
   server.begin();
   Serial.print("Server started\n");
 }
@@ -29,6 +35,7 @@ void setup() {
 void loop() {
   WiFiClient client = server.available();   // listen for incoming clients
   if (client) {                             // if you get a client,
+    digitalWrite(LED_BUILTIN,1);
     Serial.print("New Client.\n");          // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected())  // loop while the client's connected
@@ -40,11 +47,14 @@ void loop() {
           Serial1.readBytes(sbuf, len);
           //push UART data to all connected client
           client.write(sbuf, len);
-          //Serial.write(sbuf, len); // echo to serial (USB) termainal for debug 
+          //Serial.write(sbuf, len); // to serial (USB) for debug
+          toggle = (toggle==1) ? 0:1; 
+          digitalWrite(LED_BUILTIN, toggle );  // toggle the LED
         }
     }
     // close the connection:
     client.stop();
+    digitalWrite(LED_BUILTIN,0);
     Serial.print("Client Disconnected.\n");
   }
 }
