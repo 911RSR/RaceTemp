@@ -14,13 +14,11 @@ void setup() {
   digitalWrite(LED_BUILTIN,1);  // Flash the LED to show activity
   delay(100);
   digitalWrite(LED_BUILTIN,0);
-  // Using a USB (Serial) to PC for debug messages
-  Serial.begin(115200);
+  Serial.begin(115200);    // Using a USB (Serial) to PC for debug messages
   Serial.print("\nConfiguring access point\n");
   Serial1.begin(230400,SERIAL_8N1,18,17);  //  only RX is used in this sketch
   // RX1 = U1RXD = connector J1 pin 11, name "18" according to devkitc user guide
   // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html 
-
   if (!WiFi.softAP(ssid, password)) {
     log_e("Soft AP creation failed.");
     while(1);
@@ -37,7 +35,6 @@ void loop() {
   if (client) {                             // if you get a client,
     digitalWrite(LED_BUILTIN,1);
     Serial.print("New Client.\n");          // print a message out the serial port
-    String currentLine = "";                // make a String to hold incoming data from the client
     while (client.connected())  // loop while the client's connected
     {            
         if(Serial1.available())
