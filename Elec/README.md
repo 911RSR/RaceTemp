@@ -1,7 +1,7 @@
 # Electronics overview -- I use these parts:
 1. Temperature sensors -- as indicated by the name "RaceTemp"
 2. Controller board
-3. WiFi module -- for connection to the phone.     
+3. WiFi module (or Bluetooth module) -- for connection to the phone.     
 4. Sat.Nav.(GPS) module and antenna for lap/split times, speed and acceleration
 5. Ignition probe for engine RPM
 6. Gyro/accelerometer: MPU9250
@@ -29,10 +29,12 @@ Thermocouple for EGT: Mondokart's "Sondagas" with green wire works fine for me.
 You can see the MCU pinout I use in STM32CubeMX (open the RaceTemp.ioc file).  
 I have also used Arduino Nano and "Blue Pill" STM32F1.  Maybe I will also try ESP32 S3 and BLE  
 
-# 3. WiFi module  
-ESP01 (ESP8266) module.  
-I have also used a HC06-module for Bluetooth SPP (in stead of WiFi). 
-The code is still mostly compatible with HC06, but the ESP01 is better. 
+# 3. WiFi module (or Bluetooth module)
+Alternatives I tried:  
+a) ESP32s3 devkit-c as UART to WiFi bridge -- running UART2WiFi.ino (Arduino sketch, see folder RaceTemp/UART2WiFi/ )  
+b) ESP01 (ESP8266) module with AT-firmware  
+c) HC06-module for Bluetooth SPP (in stead of WiFi)  
+The latest code is configured for a), but is still mostly compatible with b) and c). 
 
 # 4 Sat.Nav. receiver and antenna  
 Ublox Neo M9N module.  
@@ -71,10 +73,11 @@ The code probably still works -- to enable it: uncomment the //#include "MPU9250
 ![LS44221 LSU ADV sensor](LS44221.jpg)  
 I will use a Bosch part number LS44221 as shown in the picture and Bylund's LambdaShield with Bosch CJ125 chip.  
 The code for this is included and enabled -- just hook it up and try! 
-It is probably OK to leave it enabled in software even if you do not add the electronics and sensor.  
+It is probably OK to leave it enabled in software even if you do not add the electronics and sensor. 
 I prefer to present the results as "Fuel Excess" -- negative FuEx means lean (danger), positive FuEx is rich (safe). 
-Preliminary target value for max power: 5 to 10% fuel excess while at 100 % throttle -- also depending on the exhaust gas temperature. 
-Slightly more excess fuel at lower throttle.  
+With respect to emissions and catalyzer: Stay close to 0%. 
+Preliminary target for max power: 5 to 10% fuel excess while at 100 % throttle -- also depending on the exhaust gas temperature. 
+Slightly more excess fuel at lower throttle can help throttle response.  
 
 I will try to use this wideband O2-sensor: Bosch part number LS44221 (marked 226A41733R) as shown in the picture.  
 Bosch LS44221 (LSU ADV) has a reasonable price, approx. 100 USD for a new one, and much less for a used.  
