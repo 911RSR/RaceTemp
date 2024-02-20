@@ -7,15 +7,15 @@
 #include <WiFiAP.h>
 const char *ssid = "yourAP";   // Set these to your desired credentials.
 const char *password = "yourPass";  // A valid password must have more than 7 characters
-volatile uint8_t toggle=0;
+const uint16_t port = 333;
+#define RGB_BRIGHTNESS 8
 
-WiFiServer server(333);
+WiFiServer server(port);
 void setup() {
-  digitalWrite(LED_BUILTIN,1);  // Flash the LED to show activity
-  delay(100);
-  digitalWrite(LED_BUILTIN,0);
+  neopixelWrite(RGB_BUILTIN,0,RGB_BRIGHTNESS,0); // Green light for starup
   Serial.begin(115200);    // Using a USB (Serial) to PC for debug messages
   Serial.print("\nConfiguring access point\n");
+  Serial1.setRxBufferSize(1024);
   Serial1.begin(230400,SERIAL_8N1,18,17);  //  only RX is used in this sketch
   // RX1 = U1RXD = connector J1 pin 11, name "18" according to devkitc user guide
   // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html 
@@ -26,6 +26,8 @@ void setup() {
   IPAddress myIP = WiFi.softAPIP();
   Serial.print("AP IP address:");
   Serial.println( myIP );
+  Serial.print("Data port: ");
+  Serial.println( port );
   server.begin();
   Serial.print("Server started\n");
 }
@@ -33,25 +35,25 @@ void setup() {
 void loop() {
   WiFiClient client = server.available();   // listen for incoming clients
   if (client) {                             // if you get a client,
-    digitalWrite(LED_BUILTIN,1);
     Serial.print("New Client.\n");          // print a message out the serial port
     while (client.connected())  // loop while the client's connected
     {            
-        if(Serial1.available())
+        if( Serial1.available() )
         {
           size_t len = Serial1.available();
           uint8_t sbuf[len];
-          Serial1.readBytes(sbuf, len);
-          //push UART data to all connected client
-          client.write(sbuf, len);
-          //Serial.write(sbuf, len); // to serial (USB) for debug
-          toggle = (toggle==1) ? 0:1; 
-          digitalWrite(LED_BUILTIN, toggle );  // toggle the LED
+          Serial1.readBytes(sbuf, len);  // read data from uart
+          client.write(sbuf, len);  // push data to the client
+          Serial.write(sbuf, len); // to serial (USB) for debug
+          neopixelWrite(RGB_BUILTIN,RGB_BRIGHTNESS,0,RGB_BRIGHTNESS); // LED on
+        } else
+        {
+          neopixelWrite(RGB_BUILTIN,0,0,0); // no LED = no data
         }
     }
-    // close the connection:
-    client.stop();
-    digitalWrite(LED_BUILTIN,0);
+
+    client.stop();  // close the connection
+    neopixelWrite(RGB_BUILTIN,0,RGB_BRIGHTNESS,0); // green led
     Serial.print("Client Disconnected.\n");
   }
 }
