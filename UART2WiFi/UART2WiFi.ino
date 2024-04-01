@@ -28,6 +28,11 @@ void setup() {
   Serial.println( myIP );
   Serial.print("Data port: ");
   Serial.println( port );
+  Serial.print("startup WiFi TxPower: ");
+  Serial.println( WiFi.getTxPower() );  
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
+  Serial.print("new WiFi TxPower: ");
+  Serial.println( WiFi.getTxPower() );  
   server.begin();
   Serial.print("Server started\n");
 }
