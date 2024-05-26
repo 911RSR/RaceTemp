@@ -8,17 +8,18 @@
 const char *ssid = "yourAP";   // Set these to your desired credentials.
 const char *password = "yourPass";  // A valid password must have more than 7 characters
 const uint16_t port = 333;
-#define RGB_BRIGHTNESS 8
+#define NEOPIX_BRIGHTNESS 8
 
 WiFiServer server(port);
 void setup() {
-  neopixelWrite(RGB_BUILTIN,0,RGB_BRIGHTNESS,0); // Green light for starup
+  neopixelWrite(RGB_BUILTIN,0,NEOPIX_BRIGHTNESS,0); // Green light for starup
   Serial.begin(115200);    // Using a USB (Serial) to PC for debug messages
   Serial.print("\nConfiguring access point\n");
   Serial1.setRxBufferSize(1024);
   Serial1.begin(230400,SERIAL_8N1,18,17);  //  only RX is used in this sketch
   // RX1 = U1RXD = connector J1 pin 11, name "18" according to devkitc user guide
   // https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1.html 
+  // Same pin according to https://github.com/vcc-gnd/YD-ESP32-S3 
   if (!WiFi.softAP(ssid, password)) {
     log_e("Soft AP creation failed.");
     while(1);
@@ -50,7 +51,7 @@ void loop() {
           Serial1.readBytes(sbuf, len);  // read data from uart
           client.write(sbuf, len);  // push data to the client
           Serial.write(sbuf, len); // to serial (USB) for debug
-          neopixelWrite(RGB_BUILTIN,RGB_BRIGHTNESS,0,RGB_BRIGHTNESS); // LED on
+          neopixelWrite(RGB_BUILTIN,NEOPIX_BRIGHTNESS,0,NEOPIX_BRIGHTNESS); // LED on
         } else
         {
           neopixelWrite(RGB_BUILTIN,0,0,0); // no LED = no data
@@ -58,7 +59,7 @@ void loop() {
     }
 
     client.stop();  // close the connection
-    neopixelWrite(RGB_BUILTIN,0,RGB_BRIGHTNESS,0); // green led
+    neopixelWrite(RGB_BUILTIN,0,NEOPIX_BRIGHTNESS,0); // green led
     Serial.print("Client Disconnected.\n");
   }
 }
