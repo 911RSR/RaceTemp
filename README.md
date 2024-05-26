@@ -1,10 +1,15 @@
 # RaceTemp
 Software, electronics (input devices) and mechanical accessories for using a phone as karting logger and display.  
 The phone can show not only temperatures (water and exhaust gas), but also lap/sector times from sat.nav. (GPS) 
-and other sensors like ignition probe (for engine RPM), accelerometer, gyro, engine knock, lambda, throttle, brake, etc. etc.  
-The recorded data can be reviewed later and you may also overlay the sensors onto your recorded video (e.g. from GoPro or phone).  
-You will need a phone with RaceChrono or TrackAddict, and you will need to make your own input device.  
+and other sensors like ignition probe (for engine RPM), accelerometer, gyro, engine knock, lambda, throttle, 
+brake, etc. etc.  The recorded data can be reviewed later and you may also overlay the sensors onto your recorded 
+video (e.g. from GoPro or phone).  You will need a phone with RaceChrono or TrackAddict, and you will need to 
+make your own input device.  
 [Link to video with sensor overlay](https://fb.watch/k7wkuMYCiB/)
+
+# "Arduino" folder 
+Short simple Arduino projects can be a good starting point if you have little 
+programming experience or limited patience. I have tested these only with ESP32s3. 
 
 # "Mech" folder 
 Mechanical stuff: Electronics box, Battery holder, CAD models of the 3D-printed bracket and bezel I use for attaching my Oscal S80 phone to a Sodikart steering wheel -- they will probably not fit your phone or your steering wheel, but you are free to modify. If you make a pull request (or send your models to me), then I can also add your CAD models to the project.  
