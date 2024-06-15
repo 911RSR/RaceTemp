@@ -107,7 +107,7 @@ uint16_t adc_read(ADC_TypeDef *ADCx, uint32_t channel)
 
 void RaceTemp_ADC_isr()
 {
-	static uint chan = 0;
+	static unsigned int chan = 0;
 	uint16_t ADC_raw = LL_ADC_REG_ReadConversionData12(ADC1);
 	switch ( ++chan )
 	{
