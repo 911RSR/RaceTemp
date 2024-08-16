@@ -1,0 +1,11 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "nucleo64-g474re")(type "KiCad")(uri "${KIPRJMOD}/symbols/nucleo64-g474re.kicad_sym")(options "")(descr ""))
+  (lib (name "YAAJ_BlackPill_SWD_Breakout")(type "KiCad")(uri "${KIPRJMOD}/symbols/YAAJ_BlackPill_SWD_Breakout.kicad_sym")(options "")(descr ""))
+  (lib (name "YAAJ_WeAct_BlackPill_Part_Like")(type "KiCad")(uri "${KIPRJMOD}/symbols/YAAJ_WeAct_BlackPill_Part_Like.kicad_sym")(options "")(descr ""))
+  (lib (name "cj125")(type "KiCad")(uri "${KIPRJMOD}/symbols/cj125.kicad_sym")(options "")(descr ""))
+  (lib (name "nettie_2_short")(type "KiCad")(uri "${KIPRJMOD}/symbols/nettie_2_short.kicad_sym")(options "")(descr ""))
+  (lib (name "TPIC8101DW")(type "KiCad")(uri "${KIPRJMOD}/symbols/TPIC8101DW.kicad_sym")(options "")(descr ""))
+  (lib (name "filter_emi_commonmode_small")(type "KiCad")(uri "${KIPRJMOD}/symbols/filter_emi_commonmode_small.kicad_sym")(options "")(descr ""))
+  (lib (name "pesd4usb3u-tbs")(type "KiCad")(uri "${KIPRJMOD}/symbols/pesd4usb3u-tbs.kicad_sym")(options "")(descr ""))
+)

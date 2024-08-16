@@ -7,6 +7,7 @@
 #include <WiFiAP.h>
 #include <SPI.h>
 #include "cred.h" //WiFi ssid and password
+#include "NTC.h"
 
 #define NEOPIX_BRIGHTNESS 8
 
@@ -103,7 +104,8 @@ float read( struct MAX31855 * a ) {
 
 void RC3(){
   float EGT_degC = read( &EGT );
-  int NTC_raw = analogRead(33);
+  uint16_t NTC_raw1 = analogRead(33);
+  uint16_t NTC_raw2 = analogRead(34);
     // RaceChrono output in $RC3 format ------------------------------------------------------------------------ 
   /* $RC3,[time],[count],[xacc],[yacc],[zacc],[gyrox],[gyroy],[gyroz],[rpm/d1],[d2],
      [a1],[a2],[a3],[a4],[a5],[a6],[a7],[a8],[a9],[a10],[a11],[a12],[a13],[a14],[a15]*checksum
@@ -119,17 +121,18 @@ void RC3(){
      - NMEA 0183 type checksum, with two uppercase hexadecimal digits (one byte)
      - each line is terminated with CR plus LF
    */
-  sprintf(rc3Message,"$RC3,,%lu,,,,,,,,,%1.3f,%1.2f,,,,,,,,,,,,,",
+  sprintf(rc3Message,"$RC3,,%lu,,,,,,,,,%1.3f,%1.1f,%1.1f,,,,,,,,,,,,",
     RC3_count++, // $RC3,time,count[-]
     EGT_degC, // a1. If decimals are not 0.00, 0.25, 0.50 or 0.75, then check error bits and connections! 
     // Multiply by 64 to get the status/error bits as integers!
-    NTC_raw*3.3f/4095.0f // a2 
+    NTC_temp(NTC_raw1, NTC_CNG_4k7), // a2 
+    NTC_temp(NTC_raw2, NTC_KOSO) // a3 
   );
   sprintf(rc3Message + strlen(rc3Message), "*%02X\r\n", nmea_checksum(rc3Message+1));
 }
 
 void loop() {
-  WiFiClient client = server.available();   // listen for incoming clients
+  WiFiClient client = server.accept();      // listen for incoming clients
   if (client) {                             // if you get a client,
     Serial.print("New Client.\n");          // print a message out the serial port
     unsigned long nextRC3 = millis() + 200;
@@ -139,7 +142,7 @@ void loop() {
       if ( millis() > nextRC3 ){
         RC3(); // write a new RC3 message into the buffer
         client.write(rc3Message, strlen(rc3Message)); // Send the RC3 message over the WiFi connection
-        nextRC3+=100;
+        nextRC3+=200;
       } 
     }
     client.stop();  // close the connection
