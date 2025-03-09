@@ -217,7 +217,7 @@ void rc3_sprintf( char buf[] )
     // Analogue input -------------------------------------------------------------------------------
 	//#ifdef NTC
 	//float t = NTC_temp( NTC_raw, NTC_KOSO );
-	float t = NTC_temp( NTC_raw, NTC_Volvo );
+	float t = NTC_temp( NTC_raw, NTC_AC );
 	LL_ADC_ClearFlag_OVR(ADC1);
 	LL_ADC_REG_StartConversionSWStart(ADC1); // Trigger next regular ADC conversion
 	if ( (t<200.0) && (t>-50.0)) tempNTC = 0.99*tempNTC + 0.01*t; // if plausible: 1st order filter
