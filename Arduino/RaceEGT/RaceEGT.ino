@@ -1,14 +1,15 @@
 /*
-  UART2WiFi.ino creates a WiFi access point, waits for WiFi connection to a clientand then sends RC3 messages to that client
+  This sketch creates a WiFi access point, waits for WiFi connection to a client and then sends RC3 messages to that client
   ESP32s3 Arduino sketch, created on 2024-02-17 by DrMotor for NiNo-racing
 */
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiAP.h>
 #include <SPI.h>
+//#include <esp_adc_cal.h>
+#include <esp_adc/adc_cali.h>
 #include "cred.h" //WiFi ssid and password
 #include "NTC.h"
-
 #define NEOPIX_BRIGHTNESS 8
 
 const std::uint16_t port = 333;
@@ -27,26 +28,42 @@ struct MAX31855{
   SPIClass * spi; 
   union {
     std::uint32_t u32;
+    std::int32_t i32;   // [1/2^20 degC] TC = thermocouple.  Note: Only 14 MSB contain usefull data -- but the rest vanishes in small decimals
     struct{
-      std::int16_t ic_temp;  // [1/16 degC] IC = the chip.  Note: LSBs are only for error messages 
-      std::int16_t tc_temp;  // [1/64 degC] TC = thermocouple.  Note: LSBs are only for error messages
+      std::int16_t ic_temp;  // [1/256 degC] IC = the chip.  Note: 4 LSBs are "reserved" and error flags 
+      std::int16_t tc_temp;  // [1/16 K, delta from chip] TC = thermocouple.  Note: 1 LSB is "reserved"
     };
   };
 };
-struct MAX31855 EGT = { .CS_Pin=GPIO_NUM_5, .spi = new SPIClass( VSPI ) };
 
-void setup( struct MAX31855 *a )
-{
-  Serial.println(__FILE__);
-  delay(250);
-  a->spi->begin();
+struct MAX31855 EGT = { 
+  .CS_Pin = GPIO_NUM_5, // We will connect the chip select to GPIO5. 
+  .spi = new SPIClass( VSPI ) 
+};  
+
+struct NTC_IO{
+  const adc_unit_t ADC_dev;
+  const gpio_num_t Vref; 
+  const adc_channel_t ADC_ch;
+  const gpio_num_t GND;
+};
+
+struct NTC_IO Water_IO = {
+  .ADC_dev = ADC_UNIT_1, 
+  .Vref = GPIO_NUM_7,
+  .ADC_ch = ADC_CHANNEL_6, 
+  .GND = GPIO_NUM_8
+};
+
+NTC WaterTemp;
+
+// Setup function for the EGT
+void setup( struct MAX31855 *a ){
+  Serial.print("\nConfiguring EGT sensor\n");
+  //pinMode(GPIO_NUM_13, INPUT_PULLUP );  // does this help or work?
   pinMode(a->CS_Pin, OUTPUT);
-  pinMode(GPIO_NUM_13, INPUT_PULLUP );  // does this help or work?
   digitalWrite(a->CS_Pin, HIGH);
-  
-  // for wakeup
-  pinMode(GPIO_NUM_33, INPUT_PULLDOWN );
-  esp_sleep_enable_ext0_wakeup( GPIO_NUM_33 , 1); //1 = High, 0 = Low
+  a->spi->begin(SCK, MISO, MOSI, a->CS_Pin);
 }
 
 void setup_WiFi(){
@@ -69,21 +86,47 @@ void setup_WiFi(){
   Serial.print("startup WiFi TxPower: ");
   Serial.println( WiFi.getTxPower() );  
   //WiFi.setTxPower(WIFI_POWER_19_5dBm);
-  //Serial.print("new WiFi TxPower: ");
-  //Serial.println( WiFi.getTxPower() );  
+  WiFi.setTxPower(WIFI_POWER_5dBm); // lower power --> less noisy thermocouple output, or ?
+  delay(100);
+  Serial.print("new WiFi TxPower: ");
+  Serial.println( WiFi.getTxPower() );  
   server.begin();
   Serial.print("Server started\n");
 }
 
+void setup( NTC_IO *a ) {
+  Serial.print("\nConfiguring NTC sensor\n");
+
+  // We will output Vref to a GPIO pin and connect a pull-up resistor from this pin to the NTC 
+  // esp_err_t status = adc_vref_to_gpio( a->ADC_dev, a->Vref );
+  //if (status == ESP_OK) Serial.println("Vref routed to GPIO");
+  //else Serial.println("Failed to route Vref");
+
+  //pinMode( a->GND, OUTPUT );
+  //digitalWrite( a->GND, LOW );
+  WaterTemp.R0=4700.0f;
+	WaterTemp.T0=29.0 + 273.15; // should it be 25 degC ?
+	WaterTemp.Beta=3650.0;
+	WaterTemp.Rs=1000.0;
+}
+
 void setup() {
-  neopixelWrite(RGB_BUILTIN,0,NEOPIX_BRIGHTNESS,0); // Green light for starup
+  neopixelWrite(RGB_BUILTIN,0,NEOPIX_BRIGHTNESS,0); // Green light for startup
   Serial.begin(115200);    // Using a USB (Serial) to PC for debug messages
   delay( 100 );
-  Serial.println("Boot number: " + String(++bootCount));  //Increment boot number and print it
+  Serial.println(__FILE__);
+  Serial.print("Boot number: ");
+  Serial.println(++bootCount);  //Increment boot number and print it
+  delay( 250 );
   setup( &EGT );
+  setup( &Water_IO );
   setup_WiFi();
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,1); //1 = High, 0 = Low
+
+  /*// for wakeup
+  pinMode(GPIO_NUM_33, INPUT_PULLDOWN );
+  esp_sleep_enable_ext0_wakeup( GPIO_NUM_33 , 1); //1 = High, 0 = Low
   //esp_deep_sleep_start();
+  */
 }
 
 uint8_t nmea_checksum(const char *s) {  // s should not include the leading $-sign and the ending *-sign
@@ -93,20 +136,20 @@ uint8_t nmea_checksum(const char *s) {  // s should not include the leading $-si
 }
 
 float read( struct MAX31855 * a ) {
-  a->spi->beginTransaction( SPISettings( 100000, MSBFIRST, SPI_MODE0)  ); // max 5MHz clock, ref: MAX61855 datasheet
-  digitalWrite( a->CS_Pin, LOW );
-  uint32_t value=0; 
-  a->u32 = a->spi->transfer32( value ); 
+  a->spi->beginTransaction( SPISettings( 1000000, MSBFIRST, SPI_MODE0)  ); // max 5MHz clock, ref. MAX61855 datasheet
+  digitalWrite( a->CS_Pin, LOW ); // is a delay needed after this to ensure tCSS > 100 ns, ref. MAX61855 datasheet  ?
+  delay(1);
+  a->u32 = a->spi->transfer32( a->u32 ); 
+  //Serial.println( a->u32 );          // for debug
   digitalWrite( a->CS_Pin, HIGH );
   a->spi->endTransaction();
-  return 0.0625f * a->tc_temp; // [degC]
+  return 953.6743164e-9f * a->i32; // [degC]   magic = 1/2^20 
 }
 
 void RC3(){
   float EGT_degC = read( &EGT );
-  uint16_t NTC_raw1 = analogRead(33);
-  uint16_t NTC_raw2 = analogRead(34);
-    // RaceChrono output in $RC3 format ------------------------------------------------------------------------ 
+  uint16_t Water_raw = analogRead( Water_IO.ADC_ch );
+  // RaceChrono output in $RC3 format ------------------------------------------------------------------------ 
   /* $RC3,[time],[count],[xacc],[yacc],[zacc],[gyrox],[gyroy],[gyroz],[rpm/d1],[d2],
      [a1],[a2],[a3],[a4],[a5],[a6],[a7],[a8],[a9],[a10],[a11],[a12],[a13],[a14],[a15]*checksum
      - $ is message start character
@@ -121,14 +164,23 @@ void RC3(){
      - NMEA 0183 type checksum, with two uppercase hexadecimal digits (one byte)
      - each line is terminated with CR plus LF
    */
-  sprintf(rc3Message,"$RC3,,%lu,,,,,,,,,%1.3f,%1.1f,%1.1f,,,,,,,,,,,,",
+
+  /*sprintf(rc3Message,"$RC3,,%lu,,,,,,,,,%1.1f,%1.1f,%1.1f,,,,,,,,,,,,",
     RC3_count++, // $RC3,time,count[-]
-    EGT_degC, // a1. If decimals are not 0.00, 0.25, 0.50 or 0.75, then check error bits and connections! 
-    // Multiply by 64 to get the status/error bits as integers!
-    NTC_temp(NTC_raw1, NTC_CNG_4k7), // a2 
-    NTC_temp(NTC_raw2, NTC_KOSO) // a3 
+    EGT_degC, // 
+    Water_raw/4095.0f*3.3f, // a2 
+    WaterTemp.degC( Water_raw ) // a3
+  );*/
+
+  // $RC2,[time],[count],[xacc],[yacc],[zacc],[rpm/d1],[d2],[a1],[a2],[a3],[a4],[a5],[a6],[a7],[a8]*checksum
+  sprintf(rc3Message,"$RC2,,%lu,,,,,,%1.1f,%1.1f,,,,,,",
+    RC3_count++, // $RC3,time,count[-]
+    EGT_degC, // 
+    WaterTemp.degC( Water_raw ) // a3
   );
+  
   sprintf(rc3Message + strlen(rc3Message), "*%02X\r\n", nmea_checksum(rc3Message+1));
+  Serial.print(rc3Message);          // print the rc message to serial port for debug
 }
 
 void loop() {
@@ -141,8 +193,8 @@ void loop() {
     {
       if ( millis() > nextRC3 ){
         RC3(); // write a new RC3 message into the buffer
-        client.write(rc3Message, strlen(rc3Message)); // Send the RC3 message over the WiFi connection
-        nextRC3+=200;
+        client.write(rc3Message, strlen(rc3Message)); // Send the RC message over the WiFi connection
+        nextRC3 += 40;
       } 
     }
     client.stop();  // close the connection
@@ -150,6 +202,6 @@ void loop() {
     Serial.print("Client Disconnected.\n");
   }
   // ToDo: Update RC3 message count also when not connected -- to indicate loss of messages
-  // ToDo: RPM and sleep/wake-up
-  // ToDo: Water temperature 
+  // ToDo: RPM and sleep/wake-up, implement and test
+  // ToDo: Water temperature, connect, test & debug
 }
