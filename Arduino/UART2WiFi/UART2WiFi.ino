@@ -8,11 +8,11 @@
 const char *ssid = "yourAP";   // Set these to your desired credentials.
 const char *password = "yourPass";  // A valid password must have more than 7 characters
 const uint16_t port = 333;
-#define NEOPIX_BRIGHTNESS 8
+#define LED_BRIGHTNESS 8
 
 WiFiServer server(port);
 void setup() {
-  neopixelWrite(RGB_BUILTIN,0,NEOPIX_BRIGHTNESS,0); // Green light for starup
+  rgbLedWrite(RGB_BUILTIN,0,LED_BRIGHTNESS,0); // Green light for starup)
   Serial.begin(115200);    // Using a USB (Serial) to PC for debug messages
   Serial.print("\nConfiguring access point\n");
   Serial1.setRxBufferSize(1024);
@@ -39,10 +39,10 @@ void setup() {
 }
 
 void loop() {
-  WiFiClient client = server.available();   // listen for incoming clients
-  if (client) {                             // if you get a client,
-    Serial.print("New Client.\n");          // print a message out the serial port
-    while (client.connected())  // loop while the client's connected
+  WiFiClient client = server.accept();   // listen for incoming clients
+  if (client) {                          // if you get a client,
+    Serial.print("New Client.\n");       // print a message to the serial port
+    while (client.connected())  // loop while the client is connected
     {            
         if( Serial1.available() )
         {
@@ -51,15 +51,15 @@ void loop() {
           Serial1.readBytes(sbuf, len);  // read data from uart
           client.write(sbuf, len);  // push data to the client
           Serial.write(sbuf, len); // to serial (USB) for debug
-          neopixelWrite(RGB_BUILTIN,NEOPIX_BRIGHTNESS,0,NEOPIX_BRIGHTNESS); // LED on
+          rgbLedWrite(RGB_BUILTIN,LED_BRIGHTNESS,0,LED_BRIGHTNESS); // LED on
         } else
         {
-          neopixelWrite(RGB_BUILTIN,0,0,0); // no LED = no data
+          rgbLedWrite(RGB_BUILTIN,0,0,0); // no LED = no data
         }
     }
 
     client.stop();  // close the connection
-    neopixelWrite(RGB_BUILTIN,0,NEOPIX_BRIGHTNESS,0); // green led
+    rgbLedWrite(RGB_BUILTIN,0,LED_BRIGHTNESS,0); // green led
     Serial.print("Client Disconnected.\n");
   }
 }
